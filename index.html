@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BBS</title>
+<meta name="description" content="BBS - Behavior-Based Safety | GREAT INDUSTRY">
+<meta name="theme-color" content="#0B1422">
+<!-- iPhone / iPad -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BBS">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/favicon-32.png">
+<link rel="manifest" href="manifest.json">
+<style>
+  :root { --bg:#0B1422; --accent:#FFC72C; --ink:#F1F5FB; --muted:rgba(231,238,248,.7); }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--ink);
+    font-family: -apple-system, "Segoe UI", "Noto Sans Thai", Tahoma, sans-serif; }
+  /* แอปเต็มจอ */
+  #app { position:fixed; inset:0; width:100%; height:100%; border:0; display:block;
+    padding-top: env(safe-area-inset-top); box-sizing:border-box; background:var(--bg); }
+  /* หน้าโหลด */
+  #splash { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
+    background:radial-gradient(500px 300px at 80% 0%, rgba(255,199,44,.18), transparent 60%), var(--bg); z-index:5; transition:opacity .4s; }
+  #splash img { width:96px; height:96px; border-radius:22px; box-shadow:0 10px 30px rgba(0,0,0,.4); }
+  #splash b { font-size:20px; letter-spacing:.04em; }
+  #splash .bar { width:140px; height:4px; border-radius:4px; background:rgba(255,255,255,.12); overflow:hidden; }
+  #splash .bar i { display:block; width:40%; height:100%; background:var(--accent); border-radius:4px; animation:ld 1.1s ease-in-out infinite; }
+  @keyframes ld { 0%{transform:translateX(-100%)} 100%{transform:translateX(260%)} }
+  #splash.hide { opacity:0; pointer-events:none; }
+  /* คำแนะนำติดตั้ง */
+  #install { position:fixed; left:12px; right:12px; bottom:calc(12px + env(safe-area-inset-bottom)); z-index:10; display:none;
+    background:#14233B; border:1px solid rgba(255,199,44,.45); border-radius:18px; padding:14px 14px 14px 16px;
+    box-shadow:0 14px 40px rgba(0,0,0,.5); }
+  #install.show { display:block; animation:up .35s ease-out; }
+  @keyframes up { from{transform:translateY(30px);opacity:0} to{transform:none;opacity:1} }
+  #install .row { display:flex; gap:12px; align-items:flex-start; }
+  #install img { width:44px; height:44px; border-radius:11px; flex:none; }
+  #install h3 { margin:0 0 4px; font-size:15px; color:var(--accent); }
+  #install p { margin:0; font-size:13.5px; line-height:1.55; color:var(--ink); }
+  #install .share { display:inline-block; width:16px; height:16px; vertical-align:-3px; }
+  #install .actions { display:flex; gap:8px; justify-content:flex-end; margin-top:10px; }
+  #install button { font:inherit; font-size:13.5px; border-radius:10px; padding:8px 14px; border:1px solid rgba(255,255,255,.2);
+    background:transparent; color:var(--muted); cursor:pointer; }
+  #install button.primary { background:var(--accent); color:#1A1405; border-color:var(--accent); font-weight:700; }
+  #setup { display:none; max-width:520px; margin:12vh auto; padding:24px; line-height:1.7; }
+  #setup code { background:rgba(255,255,255,.08); padding:2px 6px; border-radius:6px; }
+</style>
+</head>
+<body>
+
+<div id="splash"><img src="icons/icon-192.png" alt=""><b>BBS</b><div class="bar"><i></i></div></div>
+<iframe id="app" title="BBS - Behavior-Based Safety" allow="clipboard-write"></iframe>
+<div id="setup"><h2>ยังไม่ได้ตั้งค่าลิงก์</h2><p>เปิดไฟล์ <code>index.html</code> แล้ววางลิงก์ Web App (ลงท้ายด้วย <code>/exec</code>) ในบรรทัด <code>APP_URL</code></p></div>
+
+<div id="install" role="dialog" aria-label="ติดตั้งแอป">
+  <div class="row">
+    <img src="icons/icon-192.png" alt="">
+    <div>
+      <h3>ติดตั้งแอป BBS บนโทรศัพท์</h3>
+      <p id="install-text"></p>
+    </div>
+  </div>
+  <div class="actions">
+    <button type="button" id="install-later">ไว้ทีหลัง</button>
+    <button type="button" class="primary" id="install-go" hidden>ติดตั้ง</button>
+  </div>
+</div>
+
+<script>
+  /* ====== ตั้งค่า: วางลิงก์ Web App ของ Apps Script (ลงท้ายด้วย /exec) ====== */
+  var APP_URL = "PASTE_YOUR_EXEC_URL_HERE";
+  /* ======================================================================== */
+
+  var frame = document.getElementById("app"), splash = document.getElementById("splash");
+  if (!/^https:\/\/script\.google\.com\/.+\/exec/.test(APP_URL)) {
+    splash.classList.add("hide"); frame.style.display = "none"; document.getElementById("setup").style.display = "block";
+  } else {
+    frame.addEventListener("load", function () { setTimeout(function () { splash.classList.add("hide"); }, 300); });
+    frame.src = APP_URL;
+    setTimeout(function () { splash.classList.add("hide"); }, 8000);
+  }
+
+  // Service worker (ทำให้ Android ติดตั้งเป็นแอปได้)
+  if ("serviceWorker" in navigator) { navigator.serviceWorker.register("sw.js").catch(function () {}); }
+
+  // ---------- แนะนำการติดตั้ง ----------
+  var box = document.getElementById("install"), txt = document.getElementById("install-text"), go = document.getElementById("install-go");
+  var ua = navigator.userAgent;
+  var isIOS = /iphone|ipad|ipod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  var isStandalone = window.navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches;
+  var dismissed = false; try { dismissed = localStorage.getItem("bbs_install_later") === "1"; } catch (e) {}
+  var SHARE_ICON = '<svg class="share" viewBox="0 0 24 24" fill="none" stroke="#5AA9FF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><path d="M5 11v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8"/></svg>';
+
+  function show() { if (!isStandalone && !dismissed) setTimeout(function () { box.classList.add("show"); }, 1500); }
+  if (isIOS) {
+    var inSafari = /safari/i.test(ua) && !/crios|fxios|line|fban|fbav|instagram/i.test(ua);
+    txt.innerHTML = inSafari
+      ? "แตะปุ่ม <b>แชร์</b> " + SHARE_ICON + " ด้านล่าง แล้วเลือก <b>“เพิ่มไปยังหน้าจอโฮม”</b>"
+      : "กรุณาเปิดลิงก์นี้ด้วย <b>Safari</b> ก่อน แล้วแตะ <b>แชร์</b> " + SHARE_ICON + " → <b>“เพิ่มไปยังหน้าจอโฮม”</b>";
+    show();
+  }
+  var deferred = null;
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault(); deferred = e;
+    txt.innerHTML = "กด <b>ติดตั้ง</b> เพื่อเพิ่มไอคอน BBS บนหน้าจอ เปิดใช้งานได้เหมือนแอปทั่วไป";
+    go.hidden = false; show();
+  });
+  go.addEventListener("click", function () {
+    if (!deferred) return; deferred.prompt();
+    deferred.userChoice.finally(function () { deferred = null; box.classList.remove("show"); });
+  });
+  document.getElementById("install-later").addEventListener("click", function () {
+    box.classList.remove("show"); try { localStorage.setItem("bbs_install_later", "1"); } catch (e) {}
+  });
+  window.addEventListener("appinstalled", function () { box.classList.remove("show"); });
+</script>
+</body>
+</html>
